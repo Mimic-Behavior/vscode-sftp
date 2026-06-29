@@ -3,3 +3,4 @@ allowBuilds:
     cpu-features: true
     keytar: true
     ssh2: true
+nodeLinker: hoisted

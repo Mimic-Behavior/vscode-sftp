@@ -26,3 +26,4 @@ out
 *.sln
 *.suo
 *.sw?
+*.vsix
