@@ -1,0 +1,5 @@
+allowBuilds:
+    "@vscode/vsce-sign": true
+    cpu-features: true
+    keytar: true
+    ssh2: true

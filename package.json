@@ -1,0 +1,127 @@
+{
+    "name": "vscode-sftp",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "main": "./out/extension.js",
+    "scripts": {
+        "build": "tsc && vite build",
+        "dev": "vite",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "picomatch": "^4.0.4",
+        "ssh2-sftp-client": "^12.1.1"
+    },
+    "devDependencies": {
+        "@mimic-behavior/eslint-config": "^0.8.1",
+        "@mimic-behavior/oxfmt-config": "^0.1.3",
+        "@types/node": "22.x",
+        "@types/picomatch": "^4.0.3",
+        "@types/ssh2": "^1.15.5",
+        "@types/vscode": "^1.105.0",
+        "@vscode/vsce": "^3.9.2",
+        "eslint": "^10.6.0",
+        "eslint-plugin-jsonc": "^3.2.0",
+        "eslint-plugin-perfectionist": "^5.9.1",
+        "eslint-plugin-sonarjs": "^4.1.0",
+        "eslint-plugin-yml": "^3.5.0",
+        "jiti": "^2.7.0",
+        "ssh2": "^1.17.0",
+        "typescript": "~6.0.2",
+        "typescript-eslint": "^8.62.0",
+        "vite": "^8.1.0"
+    },
+    "contributes": {
+        "commands": [
+            {
+                "command": "sftp.deploy",
+                "title": "[SFTP] Deploy"
+            }
+        ],
+        "configuration": {
+            "title": "sftp",
+            "properties": {
+                "sftp": {
+                    "properties": {
+                        "targets": {
+                            "default": [],
+                            "description": "List of targets",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "host",
+                                    "port",
+                                    "username"
+                                ],
+                                "properties": {
+                                    "hasButton": {
+                                        "description": "Has server button for deployment",
+                                        "type": "boolean"
+                                    },
+                                    "host": {
+                                        "description": "Server address",
+                                        "type": "string"
+                                    },
+                                    "mappings": {
+                                        "description": "List of mappings",
+                                        "items": {
+                                            "required": [
+                                                "from",
+                                                "to"
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "from": {
+                                                    "description": "Path to source directory (should start and end with a slash, \"/path/to/source/\")",
+                                                    "pattern": "^/.+/$",
+                                                    "type": "string"
+                                                },
+                                                "to": {
+                                                    "description": "Path to remote directory (should start and end with a slash, \"/path/to/remote/\")",
+                                                    "pattern": "^/.+/$",
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "type": "array"
+                                    },
+                                    "name": {
+                                        "description": "Server name",
+                                        "type": "string"
+                                    },
+                                    "port": {
+                                        "description": "Server port",
+                                        "type": "number"
+                                    },
+                                    "privateKey": {
+                                        "description": "Path to private key for authentication",
+                                        "type": "string"
+                                    },
+                                    "username": {
+                                        "description": "User name",
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                }
+            }
+        },
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "sftp.deploy"
+                }
+            ]
+        }
+    },
+    "activationEvents": [],
+    "engines": {
+        "vscode": "^1.105.1"
+    }
+}
