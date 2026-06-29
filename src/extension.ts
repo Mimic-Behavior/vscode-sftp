@@ -73,24 +73,7 @@ async function activate(context: vscode.ExtensionContext) {
                 await context.secrets.store(storageKey, secret.password)
             }
 
-            await vscode.window.withProgress(
-                { cancellable: false, location: vscode.ProgressLocation.Notification, title: 'Uploading files' },
-                async () => {
-                    vscode.window.showInformationMessage(`Uploading files to ${target.name}`)
-
-                    for (const uri of uris) {
-                        logger.appendLine(`Uploading file: ${uri.fsPath}`)
-                        await upload({
-                            currentUpload: (pathname) => {
-                                logger.appendLine(`Current upload: ${pathname}`)
-                            },
-                            mappings: target.mappings,
-                            pathname: uri.fsPath,
-                            sftp,
-                        })
-                    }
-                },
-            )
+            await uploadWithProgress(sftp, target, uris)
             await sftp.end()
         }
     })
@@ -104,15 +87,15 @@ function pathMapping(pathname: string, mappings: Mapping[]) {
     for (const mapping of mappings) {
         if (
             // oxfmt-ignore
-            !mapping.remote.endsWith('/') ||
-            !mapping.remote.startsWith('/') ||
-            !mapping.source.endsWith('/') ||
-            !mapping.source.startsWith('/')
+            !mapping.from.endsWith('/') ||
+            !mapping.from.startsWith('/') ||
+            !mapping.to.endsWith('/') ||
+            !mapping.to.startsWith('/')
         ) {
             continue
         }
 
-        const result = picomatch(mapping.source.replace(/\/$/, '/**'), {
+        const result = picomatch(mapping.from.replace(/\/$/, '/**'), {
             capture: true,
             nobrace: true,
             nobracket: true,
@@ -121,7 +104,7 @@ function pathMapping(pathname: string, mappings: Mapping[]) {
         })(pathname, true)
 
         if (Array.isArray(result.match)) {
-            return path.join(mapping.remote, result.match.at(-1) ?? '')
+            return path.join(mapping.to, result.match.at(-1) ?? '')
         }
     }
 
@@ -157,10 +140,9 @@ async function resolveConnection(sftp: SftpClient, target: Target, secret: { pas
         if (isCancelled) {
             vscode.window.showInformationMessage('Connection cancelled')
         } else {
-            vscode.window.showErrorMessage(`Failed to connect to server`, {
-                detail: error instanceof Error ? error.message : String(error),
-                modal: false,
-            })
+            vscode.window.showErrorMessage(
+                `Failed to connect to server, error: ${error instanceof Error ? error.message : String(error)}`,
+            )
         }
 
         return
@@ -214,8 +196,8 @@ async function upload({
     pathname,
     sftp,
 }: {
-    currentUpload?: (pathname: string) => void
-    mappings?: Mapping[]
+    currentUpload: (pathname: string) => void
+    mappings: Mapping[]
     pathname: string
     sftp: SftpClient
 }) {
@@ -240,11 +222,43 @@ async function upload({
 
         currentUpload?.(workspacePath)
 
-        const mappedPath = mappings ? pathMapping(workspacePath, mappings) : workspacePath
+        const mappedPath = mappings?.length ? pathMapping(workspacePath, mappings) : workspacePath
         const remotePath = path.join(await sftp.cwd(), mappedPath)
 
         await sftp.mkdir(path.dirname(remotePath), true)
         await sftp.put(pathname, remotePath)
+    }
+}
+
+async function uploadWithProgress(sftp: SftpClient, target: Target, uris: vscode.Uri[]) {
+    try {
+        const total = await vscode.window.withProgress(
+            { cancellable: false, location: vscode.ProgressLocation.Notification, title: 'Uploading files' },
+            async (progress) => {
+                let total = 0
+
+                for (const uri of uris) {
+                    logger.appendLine(`Uploading file: ${uri.fsPath}`)
+                    await upload({
+                        currentUpload: (pathname) => {
+                            progress.report({ message: `Uploading file: ${pathname}` })
+                            total++
+                        },
+                        mappings: target.mappings,
+                        pathname: uri.fsPath,
+                        sftp,
+                    })
+                }
+
+                return total
+            },
+        )
+
+        vscode.window.showInformationMessage(`Uploaded ${total} files to ${target.name}`)
+    } catch (error) {
+        vscode.window.showErrorMessage(
+            `Failed to upload files to ${target.name}, error: ${error instanceof Error ? error.message : String(error)}`,
+        )
     }
 }
 

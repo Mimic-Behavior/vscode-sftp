@@ -1,6 +1,6 @@
 type Mapping = {
-    remote: string
-    source: string
+    from: string
+    to: string
 }
 
 export type { Mapping }

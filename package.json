@@ -3,7 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "main": "./out/extension.js",
+    "main": "./out/extension.cjs",
     "scripts": {
         "build": "tsc && vite build",
         "dev": "vite",

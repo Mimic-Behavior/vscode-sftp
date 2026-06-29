@@ -1,3 +1,4 @@
+import { builtinModules } from 'node:module'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -6,11 +7,12 @@ export default defineConfig({
         lib: {
             entry: './src/extension.ts',
             fileName: 'extension',
-            name: 'extension',
+            formats: ['cjs'],
         },
         outDir: './out',
         rolldownOptions: {
-            external: ['cpu-features', 'vscode'],
+            external: ['cpu-features', 'vscode', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
+            platform: 'node',
         },
     },
 })
