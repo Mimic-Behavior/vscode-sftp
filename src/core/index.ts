@@ -1,3 +1,4 @@
+export * from './batch-files-by-directories'
 export * from './catch-deepest-directories'
 export * from './catch-files'
 export * from './constants'

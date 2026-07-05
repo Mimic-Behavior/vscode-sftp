@@ -3,7 +3,7 @@ import path from 'node:path'
 import pLimit from 'p-limit'
 import * as vscode from 'vscode'
 
-import { catchDeepestDirectories, catchFiles, pathMapping } from '~/core'
+import { batchFilesByDirectories, catchFiles, pathMapping } from '~/core'
 import { getLogger, getSecret, promptTargets, withProgress } from '~/platform'
 
 async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
@@ -66,25 +66,50 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(uris[0])?.uri.fsPath || ''
 
         const files = await catchFiles(uris.map((uri) => uri.fsPath))
-        const directories = catchDeepestDirectories(files)
+        const limit = pLimit({ concurrency: 4 })
 
-        const remoteRootPath = await sftp.realpath('.')
+        await withProgress(
+            async (progress) => {
+                const batches = batchFilesByDirectories(files)
 
-        await withProgress(async (progress) => {
-            for (const directory of directories) {
-                const relativePath = directory.replace(workspaceFolder, '')
-                const remotePath = path.join(remoteRootPath, pathMapping(relativePath, target.mappings || []))
-                progress.report({ message: `Creating directory: ${remotePath} to ${target.name}` })
-                await sftp.mkdir(remotePath, { recursive: true })
-            }
+                const remoteRootPath = await sftp.realpath('.')
 
-            await pLimit({ concurrency: 4 }).map(files, async (file) => {
-                const relativePath = file.pathname.replace(workspaceFolder, '')
-                const remotePath = path.join(remoteRootPath, pathMapping(relativePath, target.mappings || []))
-                progress.report({ message: `Uploading file: ${remotePath} to ${target.name}` })
-                return sftp.fastPut(file.pathname, remotePath)
-            })
-        })
+                const uploadTasks: {
+                    remoteDirectoryPath: string
+                    remoteFilePath: string
+                    sourceFilePath: string
+                }[] = []
+
+                for (const [directory, filenames] of batches.entries()) {
+                    const relativePath = path.relative(workspaceFolder, directory)
+                    const mappedDirectoryPath = pathMapping(relativePath, target.mappings || [])
+                    const remoteDirectoryPath = path.posix.join(remoteRootPath, mappedDirectoryPath)
+
+                    for (const filename of filenames) {
+                        uploadTasks.push({
+                            remoteDirectoryPath,
+                            remoteFilePath: path.posix.join(remoteDirectoryPath, filename),
+                            sourceFilePath: path.posix.join(directory, filename),
+                        })
+                    }
+                }
+
+                const tasks = new Map<string, Promise<void>>()
+
+                for (const directory of uploadTasks.map((task) => task.remoteDirectoryPath)) {
+                    tasks.set(directory, sftp.mkdir(directory, { recursive: true }))
+                }
+
+                await limit.map(uploadTasks, async (uploadTask) => {
+                    await tasks.get(uploadTask.remoteDirectoryPath)
+                    progress.report({ message: `Uploading file: ${uploadTask.remoteFilePath}` })
+                    await sftp.fastPut(uploadTask.sourceFilePath, uploadTask.remoteFilePath)
+                })
+            },
+            {
+                title: `Deploying to ${target.name}`,
+            },
+        )
 
         sftp.end()
     }

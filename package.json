@@ -9,11 +9,15 @@
         "url": "git+https://github.com/Mimic-Behavior/vscode-sftp.git"
     },
     "publisher": "mimic-behavior",
+    "files": [
+        "out"
+    ],
     "type": "module",
     "main": "./out/extension.cjs",
     "scripts": {
         "build": "tsc && vite build",
         "dev": "vite",
+        "package": "vsce package --no-dependencies",
         "preview": "vite preview"
     },
     "dependencies": {
