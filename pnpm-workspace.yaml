@@ -3,4 +3,7 @@ allowBuilds:
     cpu-features: true
     keytar: true
     ssh2: true
+minimumReleaseAgeExclude:
+    - "@mimic-behavior/ssh2-sftp-client@0.0.1 || 0.0.2"
+    - "@mimic-behavior/ssh2@0.0.1 || 0.0.2"
 nodeLinker: hoisted

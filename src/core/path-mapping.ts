@@ -1,0 +1,32 @@
+import path from 'node:path'
+import picomatch from 'picomatch'
+
+function pathMapping(pathname: string, mappings: { from: string; to: string }[]) {
+    for (const mapping of mappings) {
+        if (
+            // oxfmt-ignore
+            !mapping.from.endsWith('/') ||
+            !mapping.from.startsWith('/') ||
+            !mapping.to.endsWith('/') ||
+            !mapping.to.startsWith('/')
+        ) {
+            continue
+        }
+
+        const result = picomatch(mapping.from.replace(/\/$/, '/**'), {
+            capture: true,
+            nobrace: true,
+            nobracket: true,
+            noext: true,
+            nonegate: true,
+        })(pathname, true)
+
+        if (Array.isArray(result.match)) {
+            return path.join(mapping.to, result.match.at(-1) ?? '')
+        }
+    }
+
+    return pathname
+}
+
+export { pathMapping }

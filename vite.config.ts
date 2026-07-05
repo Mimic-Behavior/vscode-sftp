@@ -1,4 +1,5 @@
 import { builtinModules } from 'node:module'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -13,6 +14,11 @@ export default defineConfig({
         rolldownOptions: {
             external: ['cpu-features', 'vscode', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
             platform: 'node',
+        },
+    },
+    resolve: {
+        alias: {
+            '~': path.resolve(__dirname, 'src'),
         },
     },
 })

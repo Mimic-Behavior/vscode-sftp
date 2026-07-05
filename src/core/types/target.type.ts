@@ -1,9 +1,6 @@
-import type { Mapping } from './mapping.type'
-
 type Target = {
-    hasButton: boolean
     host: string
-    mappings: Mapping[]
+    mappings: { from: string; to: string }[]
     name: string
     port: number
     privateKey: string

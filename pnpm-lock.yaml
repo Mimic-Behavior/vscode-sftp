@@ -8,12 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@mimic-behavior/ssh2-sftp-client':
+        specifier: ^0.0.2
+        version: 0.0.2
+      p-limit:
+        specifier: ^7.3.0
+        version: 7.3.0
       picomatch:
         specifier: ^4.0.4
         version: 4.0.4
-      ssh2-sftp-client:
-        specifier: ^12.1.1
-        version: 12.1.1
     devDependencies:
       '@mimic-behavior/eslint-config':
         specifier: ^0.8.1
@@ -238,6 +241,12 @@ packages:
     resolution: {integrity: sha512-2e8CxdomUSRDtqm1UkS7UajUqqxgK40/XEbhZvhscWEPfpWkIPPWz82ZjuRY4AcIIb4Co/PSbOKMOV8MFGqKUw==}
     peerDependencies:
       oxfmt: '>=0.40.0'
+
+  '@mimic-behavior/ssh2-sftp-client@0.0.2':
+    resolution: {integrity: sha512-RWdkQt/2aaZ+sXqOCdNAhUzbBv44C1eNV+8FL3rdimmfYpsVIwMWOBIvu999bD3qCZUTJ3EiHIddf6ZPxzG+Pg==}
+
+  '@mimic-behavior/ssh2@0.0.2':
+    resolution: {integrity: sha512-Awc6D/qP0lXj6dLujpsXGnPoBYK4jRdmvcyuwSoobnzY/NRrqicvBZSYDpYQVWxgdvM1KTH7tVKOsYTXrgJFsg==}
 
   '@napi-rs/wasm-runtime@1.1.6':
     resolution: {integrity: sha512-ZLv/JdUfkvOy9eCnnBaGfiO+XimbjebAeO+MRQqD/B+FR1tnRN0tpKSJHRbE8sFfS6aqsXZ67TQjfwfsxULVbg==}
@@ -790,9 +799,6 @@ packages:
   buffer-equal-constant-time@1.0.1:
     resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
 
-  buffer-from@1.1.2:
-    resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
-
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
 
@@ -859,10 +865,6 @@ packages:
   commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
-
-  concat-stream@2.0.0:
-    resolution: {integrity: sha512-MWufYdFw53ccGjCA+Ol7XJYpAlW6/prSMzuPOTRnJGcGzuhLn4Scrz7qf6o8bROZ514ltazcIFJZevcfbo0x7A==}
-    engines: {'0': node >= 6.0}
 
   cpu-features@0.0.10:
     resolution: {integrity: sha512-9IkYqtX3YHPCzoVg1Py+o9057a3i0fp7S530UWokCSaFVTc7CwXPRiOjRjBQQ18ZCNafx78YfnG+HALxtVmOGA==}
@@ -1618,6 +1620,10 @@ packages:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
 
+  p-limit@7.3.0:
+    resolution: {integrity: sha512-7cIXg/Z0M5WZRblrsOla88S4wAK+zOQQWeBYfV3qJuJXMr+LnbYjaadrFaS0JILfEDPVqHyKnZ1Z/1d6J9VVUw==}
+    engines: {node: '>=20'}
+
   p-locate@5.0.0:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
@@ -1846,10 +1852,6 @@ packages:
   spdx-license-ids@3.0.23:
     resolution: {integrity: sha512-CWLcCCH7VLu13TgOH+r8p1O/Znwhqv/dbb6lqWy67G+pT1kHmeD/+V36AVb/vq8QMIQwVShJ6Ssl5FPh0fuSdw==}
 
-  ssh2-sftp-client@12.1.1:
-    resolution: {integrity: sha512-wYVDgwkpcKG2iPGQQ+QR33xkWqLFIaVrYvA+uON4pmxTPaPuB81f1aooUEPN75e/9DCK6rrKYXb6zR6zP3+EtA==}
-    engines: {node: '>=18.20.4'}
-
   ssh2@1.17.0:
     resolution: {integrity: sha512-wPldCk3asibAjQ/kziWQQt1Wh3PgDFpC0XpwclzKcdT1vql6KeYxf5LIt4nlFkUeR8WuphYMKqUA56X4rjbfgQ==}
     engines: {node: '>=10.16.0'}
@@ -1959,9 +1961,6 @@ packages:
 
   typed-rest-client@1.8.11:
     resolution: {integrity: sha512-5UvfMpd1oelmUPRbbaVnq+rHP7ng2cE4qoQkQeAqxRL6PklkxsM0g32/HL0yfvruK6ojQ5x8EE+HF4YV6DtuCA==}
-
-  typedarray@0.0.6:
-    resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
 
   typescript-eslint@8.62.0:
     resolution: {integrity: sha512-8QxXi+ZACKX0kaqO4gY8kn0RSD9gFfaHDWwjqtEN48aWCBkX4MJaufWN+c3BzlrXLOxfywDL8CaoqUwcRq4j4Q==}
@@ -2117,6 +2116,10 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  yocto-queue@1.2.2:
+    resolution: {integrity: sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ==}
+    engines: {node: '>=12.20'}
 
 snapshots:
 
@@ -2319,6 +2322,14 @@ snapshots:
   '@mimic-behavior/oxfmt-config@0.1.3(oxfmt@0.56.0)':
     dependencies:
       oxfmt: 0.56.0
+
+  '@mimic-behavior/ssh2-sftp-client@0.0.2':
+    dependencies:
+      '@mimic-behavior/ssh2': 0.0.2
+
+  '@mimic-behavior/ssh2@0.0.2':
+    dependencies:
+      ssh2: 1.17.0
 
   '@napi-rs/wasm-runtime@1.1.6(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
     dependencies:
@@ -2848,8 +2859,6 @@ snapshots:
 
   buffer-equal-constant-time@1.0.1: {}
 
-  buffer-from@1.1.2: {}
-
   buffer@5.7.1:
     dependencies:
       base64-js: 1.5.1
@@ -2925,13 +2934,6 @@ snapshots:
       delayed-stream: 1.0.0
 
   commander@12.1.0: {}
-
-  concat-stream@2.0.0:
-    dependencies:
-      buffer-from: 1.1.2
-      inherits: 2.0.4
-      readable-stream: 3.6.2
-      typedarray: 0.0.6
 
   cpu-features@0.0.10:
     dependencies:
@@ -3368,7 +3370,8 @@ snapshots:
 
   index-to-position@1.2.0: {}
 
-  inherits@2.0.4: {}
+  inherits@2.0.4:
+    optional: true
 
   ini@1.3.8:
     optional: true
@@ -3700,6 +3703,10 @@ snapshots:
     dependencies:
       yocto-queue: 0.1.0
 
+  p-limit@7.3.0:
+    dependencies:
+      yocto-queue: 1.2.2
+
   p-locate@5.0.0:
     dependencies:
       p-limit: 3.1.0
@@ -3829,6 +3836,7 @@ snapshots:
       inherits: 2.0.4
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
+    optional: true
 
   refa@0.12.1:
     dependencies:
@@ -3968,11 +3976,6 @@ snapshots:
 
   spdx-license-ids@3.0.23: {}
 
-  ssh2-sftp-client@12.1.1:
-    dependencies:
-      concat-stream: 2.0.0
-      ssh2: 1.17.0
-
   ssh2@1.17.0:
     dependencies:
       asn1: 0.2.6
@@ -3990,6 +3993,7 @@ snapshots:
   string_decoder@1.3.0:
     dependencies:
       safe-buffer: 5.2.1
+    optional: true
 
   strip-ansi@6.0.1:
     dependencies:
@@ -4097,8 +4101,6 @@ snapshots:
       tunnel: 0.0.6
       underscore: 1.13.8
 
-  typedarray@0.0.6: {}
-
   typescript-eslint@8.62.0(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
       '@typescript-eslint/eslint-plugin': 8.62.0(@typescript-eslint/parser@8.62.0(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3)
@@ -4134,7 +4136,8 @@ snapshots:
 
   url-join@4.0.1: {}
 
-  util-deprecate@1.0.2: {}
+  util-deprecate@1.0.2:
+    optional: true
 
   validate-npm-package-license@3.0.4:
     dependencies:
@@ -4200,3 +4203,5 @@ snapshots:
       buffer-crc32: 0.2.13
 
   yocto-queue@0.1.0: {}
+
+  yocto-queue@1.2.2: {}

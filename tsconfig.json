@@ -13,12 +13,12 @@
         "noFallthroughCasesInSwitch": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "paths": {
+            "~/*": ["./src/*"]
+        },
         "skipLibCheck": true,
         "target": "es2023",
+        "types": ["vite/client"],
         "verbatimModuleSyntax": true
-    },
-    "include": [
-        "src",
-        "types"
-    ]
+    }
 }
