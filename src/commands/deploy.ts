@@ -26,7 +26,7 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
 
     for (const target of targets) {
         const sftp = new SftpClient()
-        const storageKey = `sftp.${target.name}.password`
+        const storageKey = `sftp.${target.name}.secret`
         const secret = await getSecret(context, target, storageKey)
 
         if (!secret) {
@@ -53,6 +53,12 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
                 },
                 { cancellable: true, title: `Connecting to ${target.name}` },
             )
+
+            if ('passphrase' in secret) {
+                context.secrets.store(storageKey, secret.passphrase ?? '')
+            } else if ('password' in secret) {
+                context.secrets.store(storageKey, secret.password ?? '')
+            }
         } catch (error) {
             if (isConnectionCancelled) {
                 vscode.window.showInformationMessage(`Connection to ${target.name} was cancelled`)
@@ -74,36 +80,61 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
 
                 const remoteRootPath = await sftp.realpath('.')
 
-                const uploadTasks: {
-                    remoteDirectoryPath: string
-                    remoteFilePath: string
-                    sourceFilePath: string
-                }[] = []
+                const uploadTasks = new Map<
+                    string,
+                    {
+                        remoteFilePath: string
+                        sourceFilePath: string
+                    }[]
+                >()
 
-                for (const [directory, filenames] of batches.entries()) {
+                for (const [directory, filenames] of batches) {
                     const relativePath = path.relative(workspaceFolder, directory)
-                    const mappedDirectoryPath = pathMapping(relativePath, target.mappings || [])
+
+                    const mappedDirectoryPath = pathMapping(path.resolve('/', relativePath), target.mappings || [])
                     const remoteDirectoryPath = path.posix.join(remoteRootPath, mappedDirectoryPath)
 
                     for (const filename of filenames) {
-                        uploadTasks.push({
-                            remoteDirectoryPath,
+                        const task = uploadTasks.get(remoteDirectoryPath)
+                        const file = {
                             remoteFilePath: path.posix.join(remoteDirectoryPath, filename),
                             sourceFilePath: path.posix.join(directory, filename),
-                        })
+                        }
+
+                        if (task) {
+                            task.push(file)
+                        } else {
+                            uploadTasks.set(remoteDirectoryPath, [file])
+                        }
                     }
                 }
 
-                const tasks = new Map<string, Promise<void>>()
+                const mkdirTasks = new Map<string, Promise<void>>()
 
-                for (const directory of uploadTasks.map((task) => task.remoteDirectoryPath)) {
-                    tasks.set(directory, sftp.mkdir(directory, { recursive: true }))
+                for (const dir of uploadTasks.keys()) {
+                    mkdirTasks.set(
+                        dir,
+                        sftp.mkdir(dir, {
+                            recursive: true,
+                        }),
+                    )
                 }
 
-                await limit.map(uploadTasks, async (uploadTask) => {
-                    await tasks.get(uploadTask.remoteDirectoryPath)
-                    progress.report({ message: `Uploading file: ${uploadTask.remoteFilePath}` })
-                    await sftp.fastPut(uploadTask.sourceFilePath, uploadTask.remoteFilePath)
+                await limit.map(uploadTasks, async ([remoteDirectoryPath, files]) => {
+                    try {
+                        await mkdirTasks.get(remoteDirectoryPath)
+                    } catch (error) {
+                        logger.value.appendLine(`Error creating directory ${remoteDirectoryPath}: ${error}`)
+                    }
+
+                    for (const uploadFile of files) {
+                        try {
+                            progress.report({ message: `Uploading file: ${uploadFile.remoteFilePath}` })
+                            await sftp.put(uploadFile.sourceFilePath, uploadFile.remoteFilePath)
+                        } catch (error) {
+                            logger.value.appendLine(`Error uploading file ${uploadFile.remoteFilePath}: ${error}`)
+                        }
+                    }
                 })
             },
             {
