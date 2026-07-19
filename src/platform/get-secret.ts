@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import * as vscode from 'vscode'
 
-import type { Target } from '~/core'
+import type { Secret, Target } from '~/core'
 
 import { promptPassword } from './ui'
 
@@ -11,7 +11,7 @@ async function getSecret(
     context: vscode.ExtensionContext,
     target: Target,
     storageKey: string,
-): Promise<{ passphrase?: string; privateKey: string } | { password?: string } | undefined> {
+): Promise<Secret | undefined> {
     const stored = await context.secrets.get(storageKey)
 
     try {

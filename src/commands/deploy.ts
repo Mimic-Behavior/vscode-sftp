@@ -3,7 +3,7 @@ import path from 'node:path'
 import pLimit from 'p-limit'
 import * as vscode from 'vscode'
 
-import { batchFilesByDirectories, catchFiles, pathMapping } from '~/core'
+import { batchFilesByDirectories, catchFiles, type File, pathMapping, type Target } from '~/core'
 import { getLogger, getSecret, promptTargets, withProgress } from '~/platform'
 
 async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
@@ -25,96 +25,27 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
     }
 
     for (const target of targets) {
-        const sftp = new SftpClient()
-        const storageKey = `sftp.${target.name}.secret`
-        const secret = await getSecret(context, target, storageKey)
+        const client = await makeClient(context, target)
 
-        if (!secret) {
-            vscode.window.showInformationMessage(`Password for ${target.name} is not set`)
+        if (!client) {
             return
         }
-
-        // Connect to the sftp server
-        let isConnectionCancelled = false
-        try {
-            await withProgress(
-                async (_, token) => {
-                    token.onCancellationRequested(() => {
-                        isConnectionCancelled = true
-                        sftp.ssh2.destroy()
-                    })
-
-                    await sftp.connect({
-                        host: target.host,
-                        port: target.port,
-                        username: target.username,
-                        ...secret,
-                    })
-                },
-                { cancellable: true, title: `Connecting to ${target.name}` },
-            )
-
-            if ('passphrase' in secret) {
-                context.secrets.store(storageKey, secret.passphrase ?? '')
-            } else if ('password' in secret) {
-                context.secrets.store(storageKey, secret.password ?? '')
-            }
-        } catch (error) {
-            if (isConnectionCancelled) {
-                vscode.window.showInformationMessage(`Connection to ${target.name} was cancelled`)
-            } else {
-                vscode.window.showInformationMessage(`Error connecting to ${target.name}: ${error}`)
-            }
-
-            return
-        }
-
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uris[0])?.uri.fsPath || ''
 
         const files = await catchFiles(uris.map((uri) => uri.fsPath))
         const limit = pLimit({ concurrency: 4 })
 
         await withProgress(
             async (progress) => {
-                const batches = batchFilesByDirectories(files)
+                const remoteRootPath = await client.realpath('.')
+                const sourceRootPath = vscode.workspace.getWorkspaceFolder(uris[0])?.uri.fsPath || ''
 
-                const remoteRootPath = await sftp.realpath('.')
-
-                const uploadTasks = new Map<
-                    string,
-                    {
-                        remoteFilePath: string
-                        sourceFilePath: string
-                    }[]
-                >()
-
-                for (const [directory, filenames] of batches) {
-                    const relativePath = path.relative(workspaceFolder, directory)
-
-                    const mappedDirectoryPath = pathMapping(path.resolve('/', relativePath), target.mappings || [])
-                    const remoteDirectoryPath = path.posix.join(remoteRootPath, mappedDirectoryPath)
-
-                    for (const filename of filenames) {
-                        const task = uploadTasks.get(remoteDirectoryPath)
-                        const file = {
-                            remoteFilePath: path.posix.join(remoteDirectoryPath, filename),
-                            sourceFilePath: path.posix.join(directory, filename),
-                        }
-
-                        if (task) {
-                            task.push(file)
-                        } else {
-                            uploadTasks.set(remoteDirectoryPath, [file])
-                        }
-                    }
-                }
-
-                const mkdirTasks = new Map<string, Promise<void>>()
+                const uploadTasks = makeUploadTasks({ files, remoteRootPath, sourceRootPath, target })
+                const createDirectoriesTasks = new Map<string, Promise<void>>()
 
                 for (const dir of uploadTasks.keys()) {
-                    mkdirTasks.set(
+                    createDirectoriesTasks.set(
                         dir,
-                        sftp.mkdir(dir, {
+                        client.mkdir(dir, {
                             recursive: true,
                         }),
                     )
@@ -122,7 +53,7 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
 
                 await limit.map(uploadTasks, async ([remoteDirectoryPath, files]) => {
                     try {
-                        await mkdirTasks.get(remoteDirectoryPath)
+                        await createDirectoriesTasks.get(remoteDirectoryPath)
                     } catch (error) {
                         logger.value.appendLine(`Error creating directory ${remoteDirectoryPath}: ${error}`)
                     }
@@ -130,7 +61,7 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
                     for (const uploadFile of files) {
                         try {
                             progress.report({ message: `Uploading file: ${uploadFile.remoteFilePath}` })
-                            await sftp.put(uploadFile.sourceFilePath, uploadFile.remoteFilePath)
+                            await client.put(uploadFile.sourceFilePath, uploadFile.remoteFilePath)
                         } catch (error) {
                             logger.value.appendLine(`Error uploading file ${uploadFile.remoteFilePath}: ${error}`)
                         }
@@ -142,8 +73,99 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
             },
         )
 
-        sftp.end()
+        client.end()
     }
+}
+
+async function makeClient(context: vscode.ExtensionContext, target: Target): Promise<SftpClient | undefined> {
+    const sftp = new SftpClient()
+    const storageKey = `sftp.${target.name}.secret`
+    const secret = await getSecret(context, target, storageKey)
+
+    if (!secret) {
+        vscode.window.showInformationMessage(`Secret for ${target.name} is not set`)
+        return
+    }
+
+    // Connect to the sftp server
+    let isConnectionCancelled = false
+    try {
+        await withProgress(
+            async (_, token) => {
+                token.onCancellationRequested(() => {
+                    isConnectionCancelled = true
+                    sftp.ssh2.destroy()
+                })
+
+                await sftp.connect({
+                    host: target.host,
+                    port: target.port,
+                    username: target.username,
+                    ...secret,
+                })
+            },
+            { cancellable: true, title: `Connecting to ${target.name}` },
+        )
+
+        if ('passphrase' in secret) {
+            context.secrets.store(storageKey, secret.passphrase ?? '')
+        } else if ('password' in secret) {
+            context.secrets.store(storageKey, secret.password ?? '')
+        }
+    } catch (error) {
+        if (isConnectionCancelled) {
+            vscode.window.showInformationMessage(`Connection to ${target.name} was cancelled`)
+        } else {
+            vscode.window.showInformationMessage(`Error connecting to ${target.name}: ${error}`)
+        }
+
+        return
+    }
+
+    return sftp
+}
+
+function makeUploadTasks({
+    files,
+    remoteRootPath,
+    sourceRootPath,
+    target,
+}: {
+    files: File[]
+    remoteRootPath: string
+    sourceRootPath: string
+    target: Target
+}) {
+    const uploadTasks = new Map<
+        string,
+        {
+            remoteFilePath: string
+            sourceFilePath: string
+        }[]
+    >()
+
+    for (const [directory, filenames] of batchFilesByDirectories(files)) {
+        const sourcePath = path.resolve('/', path.relative(sourceRootPath, directory))
+
+        const mappedDirectoryPath = pathMapping(sourcePath, target.mappings || [])
+        const remoteDirectoryPath = path.posix.join(remoteRootPath, mappedDirectoryPath)
+
+        for (const filename of filenames) {
+            const task = uploadTasks.get(remoteDirectoryPath)
+            const file = {
+                remoteFilePath: path.posix.join(remoteDirectoryPath, filename),
+                sourceFilePath: path.posix.join(directory, filename),
+            }
+
+            if (task) {
+                task.push(file)
+            } else {
+                uploadTasks.set(remoteDirectoryPath, [file])
+            }
+        }
+    }
+
+    return uploadTasks
 }
 
 export { deploy }
