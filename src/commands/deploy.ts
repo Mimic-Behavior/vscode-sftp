@@ -4,7 +4,7 @@ import pLimit from 'p-limit'
 import * as vscode from 'vscode'
 
 import { batchFilesByDirectories, catchFiles, type File, pathMapping, type Target } from '~/core'
-import { getLogger, getSecret, promptTargets, withProgress } from '~/platform'
+import { getLogger, getSecret, getSecretStorageKey, promptTargets, withProgress } from '~/platform'
 
 async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
     const logger = getLogger()
@@ -79,7 +79,7 @@ async function deploy(uris: vscode.Uri[], context: vscode.ExtensionContext) {
 
 async function makeClient(context: vscode.ExtensionContext, target: Target): Promise<SftpClient | undefined> {
     const sftp = new SftpClient()
-    const storageKey = `sftp.${target.name}.secret`
+    const storageKey = getSecretStorageKey(target.name)
     const secret = await getSecret(context, target, storageKey)
 
     if (!secret) {
