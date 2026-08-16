@@ -1,7 +1,6 @@
 export * from './batch-files-by-directories'
 export * from './catch-deepest-directories'
 export * from './catch-files'
-export * from './constants'
 export * from './path-mapping'
-export * from './types'
+export type * from './types'
 export * from './utils'

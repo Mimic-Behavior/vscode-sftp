@@ -1,0 +1,106 @@
+{
+    "properties": {
+        "sftp": {
+            "properties": {
+                "targets": {
+                    "default": [],
+                    "description": "List of targets",
+                    "items": {
+                        "properties": {
+                            "commands": {
+                                "properties": {
+                                    "onAfter": {
+                                        "description": "Command to run after upload",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "connection": {
+                                "properties": {
+                                    "host": {
+                                        "description": "Server address",
+                                        "type": "string"
+                                    },
+                                    "passphrase": {
+                                        "description": "Ask for passphrase",
+                                        "type": "boolean"
+                                    },
+                                    "passphraseMaxAge": {
+                                        "description": "Passphrase max age in days (default is 30 days)",
+                                        "type": "number"
+                                    },
+                                    "password": {
+                                        "description": "Ask for password",
+                                        "type": "boolean"
+                                    },
+                                    "passwordMaxAge": {
+                                        "description": "Password max age in days (default is 30 days)",
+                                        "type": "number"
+                                    },
+                                    "port": {
+                                        "description": "Server port",
+                                        "type": "number"
+                                    },
+                                    "privateKey": {
+                                        "description": "Path to private key for authentication",
+                                        "type": "string"
+                                    },
+                                    "username": {
+                                        "description": "User name",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "host",
+                                    "port",
+                                    "username"
+                                ],
+                                "type": "object"
+                            },
+                            "mappings": {
+                                "description": "List of mappings",
+                                "items": {
+                                    "properties": {
+                                        "from": {
+                                            "description": "Path to source directory (should start and end with a slash, \"/path/to/source/\")",
+                                            "pattern": "^/.+/$",
+                                            "type": "string"
+                                        },
+                                        "to": {
+                                            "description": "Path to remote directory (should start and end with a slash, \"/path/to/remote/\")",
+                                            "pattern": "^/.+/$",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "from",
+                                        "to"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            "mappingsOnly": {
+                                "description": "Only upload files that are mapped",
+                                "type": "boolean"
+                            },
+                            "name": {
+                                "description": "Server name",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "connection",
+                            "name"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "title": "sftp"
+}

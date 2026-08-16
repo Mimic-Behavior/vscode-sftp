@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Target } from '~/core'
+import type { Target } from '~/platform'
 
 import { getConfig } from '../get-config'
 

@@ -1,14 +1,20 @@
 import * as vscode from 'vscode'
 
-import { deploy } from './commands'
-import { clearSecrets } from './platform'
+import { clearSecrets, upload } from './commands'
+import { EXTENSION_KEY, secretVerify, type Target } from './platform'
 
 async function activate(context: vscode.ExtensionContext) {
-    await clearSecrets(context)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sftp.upload', (_, uris: vscode.Uri[]) => upload(uris, context)),
+        vscode.commands.registerCommand('sftp.clearSecrets', () => clearSecrets(context)),
+    )
 
-    const disposable = vscode.commands.registerCommand('sftp.deploy', (_, uris: vscode.Uri[]) => deploy(uris, context))
+    const targets = vscode.workspace.getConfiguration(EXTENSION_KEY).get<Target[]>('targets') ?? []
 
-    context.subscriptions.push(disposable)
+    for (const target of targets) {
+        secretVerify(context, target, 'passphrase')
+        secretVerify(context, target, 'password')
+    }
 }
 
 function deactivate() {}

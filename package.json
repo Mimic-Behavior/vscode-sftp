@@ -21,7 +21,9 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@mimic-behavior/ssh2": "^0.1.0",
         "@mimic-behavior/ssh2-sftp-client": "^0.1.0",
+        "date-fns": "^4.4.0",
         "p-limit": "^7.3.0",
         "picomatch": "^4.0.4"
     },
@@ -48,12 +50,15 @@
     "contributes": {
         "commands": [
             {
-                "command": "sftp.deploy",
-                "title": "[SFTP] Deploy"
+                "command": "sftp.clearSecrets",
+                "title": "[SFTP] Clear Secrets"
+            },
+            {
+                "command": "sftp.upload",
+                "title": "[SFTP] Upload"
             }
         ],
         "configuration": {
-            "title": "sftp",
             "properties": {
                 "sftp": {
                     "properties": {
@@ -61,30 +66,52 @@
                             "default": [],
                             "description": "List of targets",
                             "items": {
-                                "type": "object",
-                                "required": [
-                                    "name",
-                                    "host",
-                                    "port",
-                                    "username"
-                                ],
                                 "properties": {
-                                    "hasButton": {
-                                        "description": "Has server button for deployment",
-                                        "type": "boolean"
-                                    },
-                                    "host": {
-                                        "description": "Server address",
-                                        "type": "string"
+                                    "connection": {
+                                        "properties": {
+                                            "host": {
+                                                "description": "Server address",
+                                                "type": "string"
+                                            },
+                                            "passphrase": {
+                                                "description": "Ask for passphrase",
+                                                "type": "boolean"
+                                            },
+                                            "passphraseMaxAge": {
+                                                "description": "Passphrase max age in days (default is 30 days)",
+                                                "type": "number"
+                                            },
+                                            "password": {
+                                                "description": "Ask for password",
+                                                "type": "boolean"
+                                            },
+                                            "passwordMaxAge": {
+                                                "description": "Password max age in days (default is 30 days)",
+                                                "type": "number"
+                                            },
+                                            "port": {
+                                                "description": "Server port",
+                                                "type": "number"
+                                            },
+                                            "privateKey": {
+                                                "description": "Path to private key for authentication",
+                                                "type": "string"
+                                            },
+                                            "username": {
+                                                "description": "User name",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "host",
+                                            "port",
+                                            "username"
+                                        ],
+                                        "type": "object"
                                     },
                                     "mappings": {
                                         "description": "List of mappings",
                                         "items": {
-                                            "required": [
-                                                "from",
-                                                "to"
-                                            ],
-                                            "type": "object",
                                             "properties": {
                                                 "from": {
                                                     "description": "Path to source directory (should start and end with a slash, \"/path/to/source/\")",
@@ -96,39 +123,42 @@
                                                     "pattern": "^/.+/$",
                                                     "type": "string"
                                                 }
-                                            }
+                                            },
+                                            "required": [
+                                                "from",
+                                                "to"
+                                            ],
+                                            "type": "object"
                                         },
                                         "type": "array"
+                                    },
+                                    "mappingsOnly": {
+                                        "description": "Only upload files that are mapped",
+                                        "type": "boolean"
                                     },
                                     "name": {
                                         "description": "Server name",
                                         "type": "string"
-                                    },
-                                    "port": {
-                                        "description": "Server port",
-                                        "type": "number"
-                                    },
-                                    "privateKey": {
-                                        "description": "Path to private key for authentication",
-                                        "type": "string"
-                                    },
-                                    "username": {
-                                        "description": "User name",
-                                        "type": "string"
                                     }
-                                }
+                                },
+                                "required": [
+                                    "connection",
+                                    "name"
+                                ],
+                                "type": "object"
                             },
                             "type": "array"
                         }
                     },
                     "type": "object"
                 }
-            }
+            },
+            "title": "sftp"
         },
         "menus": {
             "explorer/context": [
                 {
-                    "command": "sftp.deploy"
+                    "command": "sftp.upload"
                 }
             ]
         }
@@ -137,5 +167,5 @@
     "engines": {
         "vscode": "^1.105.1"
     },
-    "packageManager": "pnpm@11.13.0+sha512.88d94724d8f2e6c186744a5584c6e59ecac869ec7ba15e9cb4cd628e8dc7066820b2481d8ee3b51ea8da323a7378068aa58c556a3720d32b7c20a051d088363a"
+    "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621"
 }
