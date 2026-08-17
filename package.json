@@ -1,5 +1,5 @@
 {
-    "name": "vscode-sftp",
+    "name": "sftp",
     "version": "0.2.0",
     "private": true,
     "homepage": "https://github.com/Mimic-Behavior/vscode-sftp",
