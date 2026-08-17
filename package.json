@@ -4,12 +4,14 @@
     "private": true,
     "homepage": "https://github.com/Mimic-Behavior/vscode-sftp",
     "author": "Mimic Behavior",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Mimic-Behavior/vscode-sftp.git"
     },
     "publisher": "mimic-behavior",
     "files": [
+        "LICENSE",
         "out"
     ],
     "type": "module",
