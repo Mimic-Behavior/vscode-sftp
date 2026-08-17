@@ -2,6 +2,7 @@ type Target = {
     commands?: {
         onAfter?: string
     }
+    concurrency?: number
     connection: {
         host: string
         passphrase?: boolean
@@ -15,6 +16,9 @@ type Target = {
     mappings?: { from: string; to: string }[]
     mappingsOnly?: boolean
     name: string
+    transfer?: Transfer
 }
 
-export type { Target }
+type Transfer = 'parallel' | 'stream'
+
+export type { Target, Transfer }

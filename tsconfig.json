@@ -17,6 +17,7 @@
             "~/*": ["./src/*"]
         },
         "skipLibCheck": true,
+        "strict": true,
         "target": "es2023",
         "types": ["vite/client"],
         "verbatimModuleSyntax": true

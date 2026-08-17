@@ -67,6 +67,12 @@
                             "description": "List of targets",
                             "items": {
                                 "properties": {
+                                    "concurrency": {
+                                        "description": "How many files to upload at the same time (default is 8)",
+                                        "maximum": 64,
+                                        "minimum": 1,
+                                        "type": "number"
+                                    },
                                     "connection": {
                                         "properties": {
                                             "host": {
@@ -138,6 +144,15 @@
                                     },
                                     "name": {
                                         "description": "Server name",
+                                        "type": "string"
+                                    },
+                                    "transfer": {
+                                        "default": "stream",
+                                        "description": "How file contents are written. \"stream\" sends one chunk at a time and works with every server. \"parallel\" pipelines chunks and is much faster on high latency links, but servers that expect sequential writes reject it; such a refusal falls back to \"stream\" automatically.",
+                                        "enum": [
+                                            "stream",
+                                            "parallel"
+                                        ],
                                         "type": "string"
                                     }
                                 },

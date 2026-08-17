@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import type { File } from './types'
+import type { File } from '../types'
 
 async function catchFiles(pathnames: string[]): Promise<File[]> {
     const result: string[] = []

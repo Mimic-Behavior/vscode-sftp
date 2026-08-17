@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import type { File } from './types'
+import type { File } from '../types'
 
 function batchFilesByDirectories(files: File[]) {
     const batches = new Map<string, string[]>()

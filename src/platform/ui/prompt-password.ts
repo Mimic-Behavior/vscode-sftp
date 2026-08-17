@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-function promptPassword(placeHolder: string) {
-    return vscode.window.showInputBox({ ignoreFocusOut: true, password: true, placeHolder })
+function promptPassword(title: string) {
+    return vscode.window.showInputBox({ ignoreFocusOut: true, password: true, title })
 }
 
 export { promptPassword }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import type { Target } from '~/platform'
 
-import { getConfig } from '../get-config'
+import { getConfig } from '../lib/get-config'
 
 async function promptTargets(context: vscode.ExtensionContext) {
     const config = getConfig(context)

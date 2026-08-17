@@ -1,9 +1,9 @@
 import { differenceInDays } from 'date-fns'
 import * as vscode from 'vscode'
 
-import type { Target } from './types'
+import type { Target } from '../types'
 
-import { getSecretStorageKey } from './utils'
+import { getSecretStorageKey } from './get-secret-storage-key'
 
 function secretVerify(context: vscode.ExtensionContext, target: Target, type: 'passphrase' | 'password') {
     const storageKey = getSecretStorageKey(target.name, type)
