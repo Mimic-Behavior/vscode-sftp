@@ -1,22 +1,19 @@
 import * as vscode from 'vscode'
 
-import type { Target } from '~/platform'
+import type { Target } from '~/core'
 
-import { getConfig } from '../lib/get-config'
+async function promptTargets(targets: Target[]) {
+    const result = await vscode.window.showQuickPick(
+        targets.map((target) => target.name),
+        {
+            canPickMany: true,
+            ignoreFocusOut: true,
+            matchOnDescription: false,
+            matchOnDetail: false,
+        },
+    )
 
-async function promptTargets(context: vscode.ExtensionContext) {
-    const config = getConfig(context)
-    const targets = config.value.get<Target[]>('targets') ?? []
-    const targetsNames = targets.map((target) => target.name)
-
-    const result = await vscode.window.showQuickPick(targetsNames, {
-        canPickMany: true,
-        ignoreFocusOut: true,
-        matchOnDescription: false,
-        matchOnDetail: false,
-    })
-
-    return result ? targets.filter((target) => result.includes(target.name)) : []
+    return result ? targets.filter((target) => result.includes(target.name)) : undefined
 }
 
 export { promptTargets }

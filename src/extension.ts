@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 
 import { clearSecrets, upload } from './commands'
-import { EXTENSION_KEY, secretVerify, type Target } from './platform'
+import { EXTENSION_KEY, type Target } from './core'
+import { secretVerify } from './platform'
 
 async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(

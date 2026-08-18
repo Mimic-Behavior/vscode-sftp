@@ -1,8 +1,10 @@
 import * as vscode from 'vscode'
 
-import type { Target } from '../../types'
+import type { Target } from '~/core'
+
 import type { Auth } from './resolve-auth'
 
+import { getLogger } from '../get-logger'
 import { getSecretStorageKey } from '../get-secret-storage-key'
 
 async function remember(
@@ -27,4 +29,12 @@ async function rememberSecrets(context: vscode.ExtensionContext, target: Target,
     }
 }
 
-export { rememberSecrets }
+function rememberSecretsQuietly(context: vscode.ExtensionContext, target: Target, auth: Auth) {
+    const logger = getLogger()
+
+    return rememberSecrets(context, target, auth).catch((error) => {
+        logger.value.appendLine(`Could not store credentials for ${target.name}: ${error}`)
+    })
+}
+
+export { rememberSecrets, rememberSecretsQuietly }

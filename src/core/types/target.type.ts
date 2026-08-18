@@ -1,3 +1,5 @@
+import type { Transfer } from './transfer.type'
+
 type Target = {
     commands?: {
         onAfter?: string
@@ -19,6 +21,4 @@ type Target = {
     transfer?: Transfer
 }
 
-type Transfer = 'parallel' | 'stream'
-
-export type { Target, Transfer }
+export type { Target }

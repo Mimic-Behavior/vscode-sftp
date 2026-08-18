@@ -1,43 +1,49 @@
-import path from 'node:path'
 import pLimit from 'p-limit'
 import * as vscode from 'vscode'
 
-import { CancelledError, type File } from '~/core'
+import {
+    CancelledError,
+    createClient,
+    createUploader,
+    createUploadTasks,
+    ensureDirectories,
+    type File,
+    type Target,
+    type Task,
+} from '~/core'
 
-import type { Target } from '../../types'
-import type { ProgressReporter } from '../../ui/make-progress-reporter'
 import type { Auth } from './resolve-auth'
 
-import { makeFileTasks } from '../plan'
-import { ensureDirectories } from './ensure-directories'
-import { makeClient } from './make-client'
-import { makeUploader } from './make-uploader'
-
-/**
- * Sequential streaming spends a round trip per chunk, so several files have to be in flight
- * to keep a high latency link busy. Servers tend to cap concurrent operations, hence the ceiling.
- */
 const FILE_CONCURRENCY = 8
 const MAX_FILE_CONCURRENCY = 64
+const MIN_FILE_CONCURRENCY = 1
 
 type DeployTargetOptions = {
     auth: Auth
     files: File[]
     onConnected: () => Promise<void>
-    report: ProgressReporter
+    onUpload: (task: Task) => void
     sourceRootPath: string
     target: Target
     token: vscode.CancellationToken
 }
 
-async function deployTarget({ auth, files, onConnected, report, sourceRootPath, target, token }: DeployTargetOptions) {
-    const client = await makeClient(target, auth, token)
+async function deployTarget({
+    auth,
+    files,
+    onConnected,
+    onUpload,
+    sourceRootPath,
+    target,
+    token,
+}: DeployTargetOptions) {
+    const client = await createClient(target, auth, token)
 
     try {
         await onConnected()
 
         const remoteRootPath = await client.realpath('.')
-        const tasks = makeFileTasks({ files, remoteRootPath, sourceRootPath, target })
+        const tasks = createUploadTasks({ files, remoteRootPath, sourceRootPath, target })
 
         if (tasks.length === 0) {
             return
@@ -49,9 +55,12 @@ async function deployTarget({ auth, files, onConnected, report, sourceRootPath, 
             tasks.map((task) => task.remoteDirectoryPath),
         )
 
-        const upload = makeUploader(client, target.transfer ?? 'stream')
+        const upload = createUploader(client, target.transfer ?? 'stream')
         const limit = pLimit({
-            concurrency: Math.min(Math.max(target.concurrency ?? FILE_CONCURRENCY, 1), MAX_FILE_CONCURRENCY),
+            concurrency: Math.min(
+                Math.max(target.concurrency ?? FILE_CONCURRENCY, MIN_FILE_CONCURRENCY),
+                MAX_FILE_CONCURRENCY,
+            ),
             rejectOnClear: true,
         })
 
@@ -62,8 +71,7 @@ async function deployTarget({ auth, files, onConnected, report, sourceRootPath, 
                 }
 
                 await upload(task.sourceFilePath, task.remoteFilePath)
-
-                report(`${target.name}: ${path.posix.basename(task.remoteFilePath)}`)
+                await onUpload(task)
             })
         })
 

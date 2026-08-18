@@ -6,7 +6,13 @@ import type { Target } from '../../types'
 
 import { pathMapping } from '../path-mapping'
 
-function makeFileTasks({
+type Task = {
+    remoteDirectoryPath: string
+    remoteFilePath: string
+    sourceFilePath: string
+}
+
+function createUploadTasks({
     files,
     remoteRootPath,
     sourceRootPath,
@@ -17,11 +23,7 @@ function makeFileTasks({
     sourceRootPath: string
     target: Target
 }) {
-    const fileTasks: {
-        remoteDirectoryPath: string
-        remoteFilePath: string
-        sourceFilePath: string
-    }[] = []
+    const fileTasks: Task[] = []
 
     for (const file of files) {
         const sourcePath = path.resolve('/', path.relative(sourceRootPath, file.pathname))
@@ -43,4 +45,5 @@ function makeFileTasks({
     return fileTasks
 }
 
-export { makeFileTasks }
+export { createUploadTasks }
+export type { Task }

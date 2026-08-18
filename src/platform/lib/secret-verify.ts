@@ -1,7 +1,7 @@
 import { differenceInDays } from 'date-fns'
 import * as vscode from 'vscode'
 
-import type { Target } from '../types'
+import type { Target } from '~/core'
 
 import { getSecretStorageKey } from './get-secret-storage-key'
 

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { EXTENSION_KEY } from '../config/constants'
+import { EXTENSION_KEY } from '../../core/config/constants'
 
 let config: { value: vscode.WorkspaceConfiguration }
 

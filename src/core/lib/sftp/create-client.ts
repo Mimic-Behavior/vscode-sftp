@@ -1,17 +1,17 @@
 import { SftpClient } from '@mimic-behavior/ssh2-sftp-client'
 import * as vscode from 'vscode'
 
-import { CancelledError, ConnectionError } from '~/core'
+import type { Auth } from '~/platform'
 
 import type { Target } from '../../types'
-import type { Auth } from './resolve-auth'
+
+import { CancelledError, ConnectionError } from '../../errors'
 
 const KEEPALIVE_INTERVAL = 10_000
 
-async function makeClient(target: Target, auth: Auth, token: vscode.CancellationToken): Promise<SftpClient> {
+async function createClient(target: Target, auth: Auth, token: vscode.CancellationToken): Promise<SftpClient> {
     const sftp = new SftpClient()
 
-    // Stays subscribed for the whole operation so that cancelling aborts an in-flight transfer too
     token.onCancellationRequested(() => sftp.ssh2.destroy())
 
     try {
@@ -30,10 +30,9 @@ async function makeClient(target: Target, auth: Auth, token: vscode.Cancellation
         throw new ConnectionError(target.name, { cause: error })
     }
 
-    // Nagle's algorithm hurts latency of the many small SFTP packets
     sftp.ssh2.setNoDelay(true)
 
     return sftp
 }
 
-export { makeClient }
+export { createClient }

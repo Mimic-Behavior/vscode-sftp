@@ -3,9 +3,10 @@ import os from 'node:os'
 import path from 'node:path'
 import * as vscode from 'vscode'
 
-import type { Target } from '../../types'
+import type { Target } from '~/core'
 
-import { needsPassphrase } from './needs-passphrase'
+import { needsPassphrase } from '~/core'
+
 import { resolveSecret } from './resolve-secret'
 
 type Auth = {
@@ -27,9 +28,7 @@ async function resolveAuth(context: vscode.ExtensionContext, target: Target): Pr
             : target.connection.privateKey
         const privateKey = await fs.readFile(privateKeyPathResolved, 'utf-8')
 
-        const askPassphrase = target.connection.passphrase === true || needsPassphrase(privateKey)
-
-        if (askPassphrase) {
+        if (target.connection.passphrase === true || needsPassphrase(privateKey)) {
             return {
                 passphrase: await resolveSecret(context, target.name, 'passphrase'),
                 privateKey,

@@ -17,13 +17,13 @@ async function resolveSecret(
         return stored
     }
 
-    const entered = await promptPassword(`Enter ${secretType} for ${targetName}`)
+    const result = await promptPassword(`Enter ${secretType} for ${targetName}`)
 
-    if (entered === undefined) {
+    if (result === undefined) {
         throw new CancelledError(`${secretType} prompt for ${targetName}`)
     }
 
-    return entered
+    return result
 }
 
 export { resolveSecret }

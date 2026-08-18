@@ -1,11 +1,20 @@
 import * as vscode from 'vscode'
 
-import { getSecretStorageKey, promptTargets } from '~/platform'
+import type { Target } from '~/core'
+
+import { getConfig, getSecretStorageKey, promptTargets } from '~/platform'
 
 async function clearSecrets(context: vscode.ExtensionContext) {
-    const targets = await promptTargets(context)
+    const config = getConfig(context)
 
-    if (!targets?.length) {
+    const targets = config.value.get<Target[]>('targets')
+    if (!targets) {
+        vscode.window.showInformationMessage('No targets found in the extension configuration')
+        return
+    }
+
+    const targetsSelected = await promptTargets(targets)
+    if (!targetsSelected?.length) {
         vscode.window.showInformationMessage('No targets selected')
         return
     }
