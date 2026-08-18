@@ -1,8 +1,8 @@
 {
     "name": "mimic-sftp",
-    "displayName": "SFTP",
+    "displayName": "Mimic Behavior - SFTP",
     "version": "0.2.2",
-    "description": "SFTP extension for VS Code",
+    "description": "Mimic Behavior - SFTP extension for VS Code",
     "homepage": "https://github.com/Mimic-Behavior/vscode-sftp",
     "license": "MIT",
     "author": "Mimic Behavior",
