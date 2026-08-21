@@ -68,6 +68,15 @@
                                 "description": "List of mappings",
                                 "items": {
                                     "properties": {
+                                        "condition": {
+                                            "properties": {
+                                                "workspaceFolderName": {
+                                                    "description": "Only apply the mapping if the workspace folder name matches",
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
                                         "from": {
                                             "description": "Path to source directory (should start and end with a slash, \"/path/to/source/\")",
                                             "pattern": "^/.+/$",

@@ -1,3 +1,4 @@
+import type { Mapping } from './mapping.type'
 import type { Transfer } from './transfer.type'
 
 type Target = {
@@ -15,7 +16,7 @@ type Target = {
         privateKey?: string
         username: string
     }
-    mappings?: { from: string; to: string }[]
+    mappings?: Mapping[]
     mappingsOnly?: boolean
     name: string
     transfer?: Transfer

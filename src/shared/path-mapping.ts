@@ -1,7 +1,9 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
 
-function pathMapping(pathname: string, mappings: { from: string; to: string }[]) {
+import type { Mapping } from './types/mapping.type'
+
+function pathMapping(pathname: string, mappings: Mapping[]) {
     for (const mapping of mappings) {
         if (
             !mapping.from.endsWith('/') ||

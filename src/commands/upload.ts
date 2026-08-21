@@ -69,8 +69,8 @@ async function resolveDeployments(
     return deployments
 }
 
-function resolveSourceRoot(uris: vscode.Uri[]) {
-    return vscode.workspace.getWorkspaceFolder(uris[0])?.uri.fsPath
+function resolveWorkspaceFolder(uris: vscode.Uri[]) {
+    return vscode.workspace.getWorkspaceFolder(uris[0])
 }
 
 function showFailure(summary: string, error: unknown) {
@@ -96,9 +96,9 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
         return
     }
 
-    const sourceRootPath = resolveSourceRoot(uris)
-    if (!sourceRootPath) {
-        vscode.window.showErrorMessage('Selected files are outside of the workspace')
+    const workspaceFolder = resolveWorkspaceFolder(uris)
+    if (!workspaceFolder) {
+        vscode.window.showErrorMessage('Selected files are not in a workspace folder')
         return
     }
 
@@ -139,9 +139,9 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
                         files,
                         onConnected: () => rememberSecretsQuietly(context, target, auth),
                         onUpload: (task) => report(`${target.name}: ${path.posix.basename(task.remoteFilePath)}`),
-                        sourceRootPath,
                         target,
                         token,
+                        workspaceFolder,
                     }),
                 ),
             )
@@ -164,17 +164,17 @@ async function uploadToTarget({
     files,
     onConnected,
     onUpload,
-    sourceRootPath,
     target,
     token,
+    workspaceFolder,
 }: {
     auth: Auth
     files: File[]
     onConnected: () => Promise<void>
     onUpload: (task: UploadTask) => void
-    sourceRootPath: string
     target: Target
     token: vscode.CancellationToken
+    workspaceFolder: vscode.WorkspaceFolder
 }) {
     const client = await createClient({
         auth,
@@ -186,7 +186,19 @@ async function uploadToTarget({
         await onConnected()
 
         const remoteRootPath = await client.realpath('.')
-        const tasks = createUploadTasks({ files, remoteRootPath, sourceRootPath, target })
+        const tasks = createUploadTasks({
+            files,
+            remoteRootPath,
+            sourceRootPath: workspaceFolder.uri.fsPath,
+            target: {
+                ...target,
+                mappings: target.mappings?.filter((mapping) =>
+                    mapping.condition?.workspaceFolderName
+                        ? workspaceFolder.name === mapping.condition.workspaceFolderName
+                        : true,
+                ),
+            },
+        })
 
         if (tasks.length === 0) {
             return
