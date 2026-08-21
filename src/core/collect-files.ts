@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import type { File } from '../types'
+import type { File } from '~/shared'
 
-async function catchFiles(pathnames: string[]): Promise<File[]> {
+async function collectFiles(pathnames: string[]): Promise<File[]> {
     const result: string[] = []
 
     for (const pathname of pathnames) {
@@ -24,4 +24,4 @@ async function catchFiles(pathnames: string[]): Promise<File[]> {
     return result.map((pathname) => ({ pathname, type: 'file' }))
 }
 
-export { catchFiles }
+export { collectFiles }

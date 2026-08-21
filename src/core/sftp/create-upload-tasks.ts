@@ -1,10 +1,6 @@
 import path from 'node:path'
 
-import type { File } from '~/core'
-
-import type { Target } from '../../types'
-
-import { pathMapping } from '../path-mapping'
+import { type File, pathMapping, type Target } from '~/shared'
 
 type Task = {
     remoteDirectoryPath: string
@@ -46,4 +42,3 @@ function createUploadTasks({
 }
 
 export { createUploadTasks }
-export type { Task }

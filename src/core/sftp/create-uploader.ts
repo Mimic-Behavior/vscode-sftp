@@ -2,14 +2,12 @@ import type { SftpClient } from '@mimic-behavior/ssh2-sftp-client'
 
 import { sftpUtils } from '@mimic-behavior/ssh2-sftp-client'
 
-import type { Transfer } from '../../types'
+import type { Transfer } from '~/shared'
 
 const CHUNK_CONCURRENCY = 32
 const CHUNK_SIZE = 32_768
 
-type Uploader = (sourceFilePath: string, remoteFilePath: string) => Promise<void>
-
-function createUploader(client: SftpClient, transfer: Transfer): Uploader {
+function createUploader(client: SftpClient, transfer: Transfer) {
     let isParallel = transfer === 'parallel'
 
     return async function upload(sourceFilePath: string, remoteFilePath: string) {
@@ -33,4 +31,3 @@ function createUploader(client: SftpClient, transfer: Transfer): Uploader {
 }
 
 export { createUploader }
-export type { Uploader }

@@ -1,4 +1,6 @@
 export * from './create-client'
+export * from './create-upload-tasks'
 export * from './create-uploader'
 export * from './ensure-directories'
 export * from './needs-passphrase'
+export * from './run-remote-command'

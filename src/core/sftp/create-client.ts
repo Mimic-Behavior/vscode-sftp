@@ -1,18 +1,19 @@
 import { SftpClient } from '@mimic-behavior/ssh2-sftp-client'
-import * as vscode from 'vscode'
 
-import type { Auth } from '~/platform'
-
-import type { Target } from '../../types'
-
-import { CancelledError, ConnectionError } from '../../errors'
+import { type Auth, CancelledError, ConnectionError, type Target } from '~/shared'
 
 const KEEPALIVE_INTERVAL = 10_000
 
-async function createClient(target: Target, auth: Auth, token: vscode.CancellationToken): Promise<SftpClient> {
+type CreateClientOptions = {
+    auth: Auth
+    signal: AbortSignal
+    target: Target
+}
+
+async function createClient({ auth, signal, target }: CreateClientOptions): Promise<SftpClient> {
     const sftp = new SftpClient()
 
-    token.onCancellationRequested(() => sftp.ssh2.destroy())
+    signal.addEventListener('abort', () => sftp.ssh2.destroy())
 
     try {
         await sftp.connect({
@@ -23,7 +24,7 @@ async function createClient(target: Target, auth: Auth, token: vscode.Cancellati
             ...auth,
         })
     } catch (error) {
-        if (token.isCancellationRequested) {
+        if (signal.aborted) {
             throw new CancelledError(target.name)
         }
 

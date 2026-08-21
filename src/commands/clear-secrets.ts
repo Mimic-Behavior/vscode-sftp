@@ -1,14 +1,15 @@
 import * as vscode from 'vscode'
 
-import type { Target } from '~/core'
+import type { Target } from '~/shared'
 
-import { getConfig, getSecretStorageKey, promptTargets } from '~/platform'
+import { getSecretStorageKey, promptTargets } from '~/platform'
+
+const EXTENSION_KEY = 'sftp'
+const SECRET_TYPES = ['passphrase', 'password'] as const
 
 async function clearSecrets(context: vscode.ExtensionContext) {
-    const config = getConfig(context)
-
-    const targets = config.value.get<Target[]>('targets')
-    if (!targets) {
+    const targets = vscode.workspace.getConfiguration(EXTENSION_KEY).get<Target[]>('targets')
+    if (!targets?.length) {
         vscode.window.showInformationMessage('No targets found in the extension configuration')
         return
     }
@@ -19,12 +20,21 @@ async function clearSecrets(context: vscode.ExtensionContext) {
         return
     }
 
-    for (const target of targets) {
-        context.secrets.delete(getSecretStorageKey(target.name, 'passphrase'))
-        context.globalState.update(getSecretStorageKey(target.name, 'passphrase'), undefined)
+    await Promise.all(targetsSelected.map((target) => clearTargetSecrets(context, target)))
 
-        context.secrets.delete(getSecretStorageKey(target.name, 'password'))
-        context.globalState.update(getSecretStorageKey(target.name, 'password'), undefined)
+    vscode.window.showInformationMessage(
+        targetsSelected.length === 1
+            ? `Cleared secrets for ${targetsSelected[0].name}`
+            : `Cleared secrets for ${targetsSelected.length} targets`,
+    )
+}
+
+async function clearTargetSecrets(context: vscode.ExtensionContext, target: Target) {
+    for (const secretType of SECRET_TYPES) {
+        const storageKey = getSecretStorageKey(target.name, secretType)
+
+        await context.secrets.delete(storageKey)
+        await context.globalState.update(storageKey, undefined)
     }
 }
 

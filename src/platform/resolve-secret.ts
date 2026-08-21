@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import { CancelledError } from '~/core'
+import { CancelledError } from '~/shared'
 
-import { promptPassword } from '../../ui/prompt-password'
-import { getSecretStorageKey } from '../get-secret-storage-key'
+import { getSecretStorageKey } from './get-secret-storage-key'
+import { promptSecret } from './ui'
 
 async function resolveSecret(
     context: vscode.ExtensionContext,
@@ -17,7 +17,7 @@ async function resolveSecret(
         return stored
     }
 
-    const result = await promptPassword(`Enter ${secretType} for ${targetName}`)
+    const result = await promptSecret(`Enter ${secretType} for ${targetName}`)
 
     if (result === undefined) {
         throw new CancelledError(`${secretType} prompt for ${targetName}`)

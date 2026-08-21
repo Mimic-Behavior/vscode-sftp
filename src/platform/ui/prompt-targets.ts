@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Target } from '~/core'
+import type { Target } from '~/shared'
 
 async function promptTargets(targets: Target[]) {
     const result = await vscode.window.showQuickPick(

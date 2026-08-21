@@ -1,23 +1,83 @@
 import path from 'node:path'
+import pLimit from 'p-limit'
 import * as vscode from 'vscode'
 
-import { CancelledError, catchFiles, type Target } from '~/core'
+import { collectFiles, createClient, createUploader, createUploadTasks, ensureDirectories } from '~/core'
 import {
-    type Auth,
     createProgressReporter,
-    deployTarget,
-    getConfig,
-    getLogger,
     promptTargets,
-    rememberSecretsQuietly,
+    rememberSecrets,
     resolveAuth,
+    toAbortSignal,
     withProgress,
 } from '~/platform'
+import { type Auth, CancelledError, type File, type Target } from '~/shared'
+
+const EXTENSION_KEY = 'sftp'
+const FILE_CONCURRENCY = 8
+const MAX_FILE_CONCURRENCY = 64
+const MIN_FILE_CONCURRENCY = 1
+
+type Deployment = {
+    auth: Auth
+    target: Target
+}
+
+type UploadTask = {
+    remoteDirectoryPath: string
+    remoteFilePath: string
+    sourceFilePath: string
+}
+
+function getLogger() {
+    // lazy singleton — пока platform/services/logger пустой
+    const channel = vscode.window.createOutputChannel(EXTENSION_KEY, { log: true })
+    return { value: channel }
+}
+
+function progressTitle(deployments: Deployment[]) {
+    return deployments.length === 1
+        ? `Uploading to ${deployments[0].target.name}`
+        : `Uploading to ${deployments.length} targets`
+}
+
+function rememberSecretsQuietly(context: vscode.ExtensionContext, target: Target, auth: Auth) {
+    return rememberSecrets(context, target, auth).catch((error) => {
+        getLogger().value.appendLine(`Could not store credentials for ${target.name}: ${error}`)
+    })
+}
+
+async function resolveDeployments(
+    context: vscode.ExtensionContext,
+    targets: Target[],
+): Promise<Deployment[] | undefined> {
+    const deployments: Deployment[] = []
+
+    try {
+        for (const target of targets) {
+            deployments.push({ auth: await resolveAuth(context, target), target })
+        }
+    } catch (error) {
+        if (error instanceof CancelledError) {
+            return undefined
+        }
+
+        showFailure('Could not resolve credentials', error)
+        return undefined
+    }
+
+    return deployments
+}
+
+function resolveSourceRoot(uris: vscode.Uri[]) {
+    return vscode.workspace.getWorkspaceFolder(uris[0])?.uri.fsPath
+}
 
 function showFailure(summary: string, error: unknown) {
     const logger = getLogger()
+    const detail = error instanceof Error ? (error.stack ?? error.message) : String(error)
 
-    logger.value.appendLine(`${summary}: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`)
+    logger.value.appendLine(`${summary}: ${detail}`)
 
     if (error instanceof Error && error.cause !== undefined) {
         logger.value.appendLine(`Caused by: ${error.cause}`)
@@ -31,22 +91,19 @@ function showFailure(summary: string, error: unknown) {
 }
 
 async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionContext) {
-    const config = getConfig(context)
-    const logger = getLogger()
-
     if (!uris?.length) {
         vscode.window.showInformationMessage('No files or directories selected')
         return
     }
 
-    const sourceRootPath = vscode.workspace.getWorkspaceFolder(uris[0])?.uri.fsPath
+    const sourceRootPath = resolveSourceRoot(uris)
     if (!sourceRootPath) {
         vscode.window.showErrorMessage('Selected files are outside of the workspace')
         return
     }
 
-    const targets = config.value.get<Target[]>('targets')
-    if (!targets) {
+    const targets = vscode.workspace.getConfiguration(EXTENSION_KEY).get<Target[]>('targets')
+    if (!targets?.length) {
         vscode.window.showInformationMessage('No targets found in the extension configuration')
         return
     }
@@ -57,26 +114,18 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
         return
     }
 
-    const files = await catchFiles(uris.map((uri) => uri.fsPath))
+    const files = await collectFiles(uris.map((uri) => uri.fsPath))
     if (!files.length) {
         vscode.window.showInformationMessage('No files to upload')
         return
     }
 
-    const deployments: { auth: Auth; target: Target }[] = []
-
-    try {
-        for (const target of targetsSelected) {
-            deployments.push({ auth: await resolveAuth(context, target), target })
-        }
-    } catch (error) {
-        if (error instanceof CancelledError) {
-            return
-        }
-
-        showFailure('Could not resolve credentials', error)
+    const deployments = await resolveDeployments(context, targetsSelected)
+    if (!deployments?.length) {
+        return
     }
 
+    const logger = getLogger()
     logger.value.appendLine(`Uploading ${files.length} file(s) to ${deployments.length} target(s)`)
 
     const results = await withProgress(
@@ -85,7 +134,7 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
 
             return Promise.allSettled(
                 deployments.map(({ auth, target }) =>
-                    deployTarget({
+                    uploadToTarget({
                         auth,
                         files,
                         onConnected: () => rememberSecretsQuietly(context, target, auth),
@@ -99,10 +148,7 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
         },
         {
             cancellable: true,
-            title:
-                deployments.length === 1
-                    ? `Uploading to ${deployments[0].target.name}`
-                    : `Uploading to ${deployments.length} targets`,
+            title: progressTitle(deployments),
         },
     )
 
@@ -110,6 +156,83 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
         if (result.status === 'rejected' && !(result.reason instanceof CancelledError)) {
             showFailure(`Upload to ${deployments[index].target.name} failed`, result.reason)
         }
+    }
+}
+
+async function uploadToTarget({
+    auth,
+    files,
+    onConnected,
+    onUpload,
+    sourceRootPath,
+    target,
+    token,
+}: {
+    auth: Auth
+    files: File[]
+    onConnected: () => Promise<void>
+    onUpload: (task: UploadTask) => void
+    sourceRootPath: string
+    target: Target
+    token: vscode.CancellationToken
+}) {
+    const client = await createClient({
+        auth,
+        signal: toAbortSignal(token),
+        target,
+    })
+
+    try {
+        await onConnected()
+
+        const remoteRootPath = await client.realpath('.')
+        const tasks = createUploadTasks({ files, remoteRootPath, sourceRootPath, target })
+
+        if (tasks.length === 0) {
+            return
+        }
+
+        await ensureDirectories(
+            client,
+            remoteRootPath,
+            tasks.map((task) => task.remoteDirectoryPath),
+        )
+
+        const uploadFile = createUploader(client, target.transfer ?? 'stream')
+        const limit = pLimit({
+            concurrency: Math.min(
+                Math.max(target.concurrency ?? FILE_CONCURRENCY, MIN_FILE_CONCURRENCY),
+                MAX_FILE_CONCURRENCY,
+            ),
+            rejectOnClear: true,
+        })
+
+        const promises = tasks.map((task) =>
+            limit(async () => {
+                if (token.isCancellationRequested) {
+                    throw new CancelledError(target.name)
+                }
+
+                await uploadFile(task.sourceFilePath, task.remoteFilePath)
+                onUpload(task)
+            }),
+        )
+
+        try {
+            await Promise.all(promises)
+        } catch (error) {
+            limit.clearQueue()
+            await Promise.allSettled(promises)
+            throw error
+        }
+    } catch (error) {
+        if (token.isCancellationRequested) {
+            throw new CancelledError(target.name)
+        }
+
+        throw error
+    } finally {
+        client.end()
     }
 }
 

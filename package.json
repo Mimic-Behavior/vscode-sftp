@@ -27,6 +27,7 @@
         "@mimic-behavior/ssh2": "^0.1.0",
         "@mimic-behavior/ssh2-sftp-client": "^0.1.0",
         "date-fns": "^4.4.0",
+        "es-toolkit": "^1.51.0",
         "p-limit": "^7.3.0",
         "picomatch": "^4.0.4"
     },

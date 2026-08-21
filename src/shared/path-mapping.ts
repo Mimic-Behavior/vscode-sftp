@@ -4,7 +4,6 @@ import picomatch from 'picomatch'
 function pathMapping(pathname: string, mappings: { from: string; to: string }[]) {
     for (const mapping of mappings) {
         if (
-            // oxfmt-ignore
             !mapping.from.endsWith('/') ||
             !mapping.from.startsWith('/') ||
             !mapping.to.endsWith('/') ||

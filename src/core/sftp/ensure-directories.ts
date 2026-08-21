@@ -4,15 +4,15 @@ import { utils } from '@mimic-behavior/ssh2'
 import { sftpUtils } from '@mimic-behavior/ssh2-sftp-client'
 import pLimit from 'p-limit'
 
-import { catchDirectoryLevels } from '../catch-directory-levels'
+import { groupDirectoriesByDepth } from '~/shared'
 
 const DIRECTORY_CONCURRENCY = 8
 
 async function ensureDirectories(client: SftpClient, rootPath: string, directories: string[]) {
     const limit = pLimit({ concurrency: DIRECTORY_CONCURRENCY })
 
-    for (const level of catchDirectoryLevels(rootPath, directories)) {
-        await Promise.all(level.map((directory) => limit(() => ensureDirectory(client, directory))))
+    for (const group of groupDirectoriesByDepth(rootPath, directories)) {
+        await Promise.all(group.map((pathname) => limit(() => ensureDirectory(client, pathname))))
     }
 }
 

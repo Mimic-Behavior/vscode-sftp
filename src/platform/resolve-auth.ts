@@ -3,17 +3,11 @@ import os from 'node:os'
 import path from 'node:path'
 import * as vscode from 'vscode'
 
-import type { Target } from '~/core'
+import type { Auth, Target } from '~/shared'
 
 import { needsPassphrase } from '~/core'
 
 import { resolveSecret } from './resolve-secret'
-
-type Auth = {
-    passphrase?: string
-    password?: string
-    privateKey?: string
-}
 
 async function resolveAuth(context: vscode.ExtensionContext, target: Target): Promise<Auth> {
     if (target.connection.password) {
@@ -44,4 +38,3 @@ async function resolveAuth(context: vscode.ExtensionContext, target: Target): Pr
 }
 
 export { resolveAuth }
-export type { Auth }
