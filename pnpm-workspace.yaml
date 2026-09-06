@@ -1,7 +1,9 @@
 allowBuilds:
-  "@vscode/vsce-sign": true
-  cpu-features: true
-  keytar: true
-  ssh2: true
+    "@vscode/vsce-sign": true
+    cpu-features: true
+    keytar: true
+    ssh2: true
 minimumReleaseAgeExclude:
-  - '@mimic-behavior/ssh2-sftp-client@0.1.0'
+    - "@mimic-behavior/eslint-config"
+    - "@mimic-behavior/oxfmt-config"
+    - "@mimic-behavior/ssh2-sftp-client"

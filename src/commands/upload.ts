@@ -137,8 +137,9 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
                     uploadToTarget({
                         auth,
                         files,
+                        onBeforeUpload: (task) => report(`${target.name}: ${path.posix.basename(task.remoteFilePath)}`),
                         onConnected: () => rememberSecretsQuietly(context, target, auth),
-                        onUpload: (task) => report(`${target.name}: ${path.posix.basename(task.remoteFilePath)}`),
+                        onUpload: (task) => report(`${target.name}: ${path.posix.basename(task.remoteFilePath)}`, true),
                         target,
                         token,
                         workspaceFolder,
@@ -162,6 +163,7 @@ async function upload(uris: undefined | vscode.Uri[], context: vscode.ExtensionC
 async function uploadToTarget({
     auth,
     files,
+    onBeforeUpload,
     onConnected,
     onUpload,
     target,
@@ -170,6 +172,7 @@ async function uploadToTarget({
 }: {
     auth: Auth
     files: File[]
+    onBeforeUpload: (task: UploadTask) => void
     onConnected: () => Promise<void>
     onUpload: (task: UploadTask) => void
     target: Target
@@ -225,6 +228,7 @@ async function uploadToTarget({
                     throw new CancelledError(target.name)
                 }
 
+                onBeforeUpload(task)
                 await uploadFile(task.sourceFilePath, task.remoteFilePath)
                 onUpload(task)
             }),

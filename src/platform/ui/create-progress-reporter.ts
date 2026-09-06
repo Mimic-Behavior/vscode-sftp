@@ -7,7 +7,7 @@ function createProgressReporter(progress: vscode.Progress<{ increment?: number; 
     let completed = 0
     let reported = 0
 
-    const flush = throttle((message?: string) => {
+    const flush = throttle((message: string) => {
         const delta = completed - reported
 
         if (delta === 0) {
@@ -21,10 +21,15 @@ function createProgressReporter(progress: vscode.Progress<{ increment?: number; 
         })
     }, REPORT_INTERVAL)
 
-    return (message?: string) => {
-        completed = completed + 1
-
-        flush(message)
+    return (message: string, increment?: boolean) => {
+        if (increment) {
+            completed = completed + 1
+            flush(message)
+        } else {
+            progress.report({
+                message: message ? `${completed} / ${total} - ${message}` : `${completed} / ${total}`,
+            })
+        }
     }
 }
 
