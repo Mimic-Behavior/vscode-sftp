@@ -37,7 +37,7 @@
         "@types/node": "~26.4.1",
         "@types/picomatch": "^4.0.3",
         "@types/ssh2": "^1.15.6",
-        "@types/vscode": "^1.136.0",
+        "@types/vscode": "^1.105.1",
         "@vscode/vsce": "^3.9.2",
         "eslint": "^10.10.0",
         "eslint-plugin-jsonc": "^3.4.2",
